@@ -4,14 +4,14 @@ import Homepage from "./Homepage";
 
 function Header() {
   return (
-    <div className="header-extended">
+    <div className="header-extended bg-purple-900 bg-opacity-20">
       <div className="header flex justify-between">
         <div className="title">Hess Dev</div>
         <nav>
-          <Link to="/" className="nav-item">
+          <Link to="/" className="nav-item text-violet-400 p-2 font-sans">
             Home
           </Link>
-          <Link to="/privacy" className="nav-item">
+          <Link to="/privacy" className="nav-item text-violet-400">
             Privacy
           </Link>
         </nav>
