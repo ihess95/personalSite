@@ -6,3 +6,36 @@
     @apply text-violet-50;
   }
 }
+
+@keyframes spinRecord {
+  from {
+    transform: rotateZ(0deg);
+  }
+  to {
+    transform: rotateZ(360deg);
+  }
+}
+
+.animate-spinRecord {
+  animation: spinRecord 1s linear infinite;
+}
+
+/* .record-button {
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAHUlEQVQYV2NkYGD4z0AEMTAwMDAwMDAwYAIQxABGqAADtYQDH7qaCHwAAAABJRU5ErkJggg==");
+  background: repeating-radial-gradient(
+    circle,
+    #222 0,
+    #222 1px,
+    #333 2px,
+    #333 3px
+  );
+  border: 2px solid black;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  position: fixed;
+  top: 2.5rem;
+  left: 2.5rem;
+  overflow: hidden;
+  z-index: 50;
+} */
