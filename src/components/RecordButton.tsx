@@ -1,4 +1,3 @@
-// RecordButton.tsx - Fixed version
 import { motion } from "framer-motion";
 
 interface RecordButtonProps {

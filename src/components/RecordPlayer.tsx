@@ -1,4 +1,3 @@
-// RecordPlayer.tsx - Fixed version
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
@@ -20,6 +19,8 @@ function RecordPlayer({ activeRecord }: { activeRecord: string | null }) {
       if (activeRecord) {
         setAnimationState("transitioning");
         setCurrentRecord(activeRecord);
+        //Just adding this call to use previousRecord for the interim
+        console.log(previousRecord);
 
         // Clear previous record after transition completes
         const clearPrevious = setTimeout(() => {
