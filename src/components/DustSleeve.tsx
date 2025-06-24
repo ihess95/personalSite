@@ -1,4 +1,16 @@
 import { motion } from "framer-motion";
+// Utility function to convert camelCase/PascalCase to spaced words - I think I may want to refactor this into it's own file so it's usable globally
+const formatDisplayName = (label: string): string => {
+  return (
+    label
+      // Insert a space before any uppercase letter that follows a lowercase letter
+      .replace(/([a-z])([A-Z])/g, "$1 $2")
+      // Insert a space before any uppercase letter that follows a number
+      .replace(/([0-9])([A-Z])/g, "$1 $2")
+      // Capitalize the first letter
+      .replace(/^./, (str) => str.toUpperCase())
+  );
+};
 
 function DustSleeve({
   label,
@@ -35,9 +47,9 @@ function DustSleeve({
         {/* Label text on sleeve */}
         <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center">
           <span className="text-xs font-bold text-amber-800 leading-tight">
-            {label.toUpperCase()}
+            {formatDisplayName(label)}
           </span>
-          <span className="text-[10px] text-amber-700 mt-1">PORTFOLIO</span>
+          <span className="text-[10px] text-amber-700 mt-1">PROJECT</span>
         </div>
 
         {/* Sleeve opening indication */}

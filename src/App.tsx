@@ -1,8 +1,9 @@
 {
   /* Things to implement
-  my actual projects
-  individual labels and covers for each project
-  the damn animation from shelf to player
+  my actual projects - done I think
+  individual labels and covers for each project - fix label text
+  download pdf
+  always display abstract after new project selected
   */
 }
 

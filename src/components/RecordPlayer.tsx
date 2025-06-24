@@ -5,48 +5,26 @@ function RecordPlayer({ activeRecord }: { activeRecord: string | null }) {
   const [animationState, setAnimationState] = useState<
     "idle" | "transitioning" | "playing"
   >("idle");
-  const [currentRecord, setCurrentRecord] = useState<string | null>(null);
-  const [previousRecord, setPreviousRecord] = useState<string | null>(null);
 
-  // Handle record transitions
   useEffect(() => {
-    if (activeRecord !== currentRecord) {
-      // Store the previous record for exit animation
-      if (currentRecord) {
-        setPreviousRecord(currentRecord);
-      }
+    if (activeRecord && animationState === "idle") {
+      setAnimationState("transitioning");
+      // Wait for layout animation to complete before starting playback
+      const transitionTimer = setTimeout(() => {
+        setAnimationState("playing");
 
-      if (activeRecord) {
-        setAnimationState("transitioning");
-        setCurrentRecord(activeRecord);
-        //Just adding this call to use previousRecord for the interim
-        console.log(previousRecord);
+        // After 3 minutes of playing, automatically stop
+        const playTimer = setTimeout(() => {
+          setAnimationState("idle");
+        }, 180000); // 3 minutes in milliseconds
 
-        // Clear previous record after transition completes
-        const clearPrevious = setTimeout(() => {
-          setPreviousRecord(null);
-        }, 800);
-
-        // Start playing after transition
-        const startPlaying = setTimeout(() => {
-          setAnimationState("playing");
-        }, 800);
-
-        return () => {
-          clearTimeout(clearPrevious);
-          clearTimeout(startPlaying);
-        };
-      } else {
-        // No active record - return to idle
-        setAnimationState("idle");
-        setCurrentRecord(null);
-        const clearPrevious = setTimeout(() => {
-          setPreviousRecord(null);
-        }, 800);
-        return () => clearTimeout(clearPrevious);
-      }
+        return () => clearTimeout(playTimer);
+      }, 800);
+      return () => clearTimeout(transitionTimer);
+    } else if (!activeRecord) {
+      setAnimationState("idle");
     }
-  }, [activeRecord, currentRecord]);
+  }, [activeRecord]); // Only depend on activeRecord changes
 
   return (
     <div className="relative">
@@ -60,7 +38,7 @@ function RecordPlayer({ activeRecord }: { activeRecord: string | null }) {
           {/* Center spindle */}
           <div className="absolute top-1/2 left-1/2 w-4 h-4 bg-gray-400 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg"></div>
 
-          {/* Single record element that handles all states */}
+          {/* State handling*/}
           <AnimatePresence mode="wait">
             {activeRecord && (
               <motion.div
@@ -124,15 +102,15 @@ function RecordPlayer({ activeRecord }: { activeRecord: string | null }) {
           </AnimatePresence>
         </div>
 
-        {/* Tonearm - simplified animation */}
+        {/* Tonearm - movement*/}
         <motion.div
           className="absolute -top-0 right-8 w-32 h-2 bg-gradient-to-r from-gray-600 to-gray-700 rounded-full origin-right shadow-lg"
           animate={{
-            rotate: animationState === "playing" ? -30 : 0,
+            rotate: animationState === "playing" ? [-20, -50] : 0, // Gradually moves across record
           }}
           transition={{
-            duration: animationState === "playing" ? 1.5 : 0.6,
-            ease: "easeInOut",
+            duration: animationState === "playing" ? 180 : 0.6, // 3 minutes to traverse record
+            ease: animationState === "playing" ? "linear" : "easeInOut",
             delay: animationState === "playing" ? 0.8 : 0, // Wait for record to arrive
           }}
         >
@@ -143,7 +121,7 @@ function RecordPlayer({ activeRecord }: { activeRecord: string | null }) {
 
       {/* Now Playing indicator */}
       <AnimatePresence>
-        {animationState === "playing" && currentRecord && (
+        {animationState === "playing" && activeRecord && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -151,7 +129,7 @@ function RecordPlayer({ activeRecord }: { activeRecord: string | null }) {
             transition={{ delay: 1.2 }}
             className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-sm font-medium"
           >
-            Now Playing: {currentRecord}
+            Now Playing: {activeRecord}
           </motion.div>
         )}
       </AnimatePresence>

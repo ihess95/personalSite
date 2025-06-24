@@ -8,8 +8,14 @@ function NavBar({
   onRecordSelect: (label: string) => void;
   activeRecord: string | null;
 }) {
-  const records = ["Music", "Movies", "Games"];
   const [hoveredRecord, setHoveredRecord] = useState<string | null>(null);
+  const recordFiles = import.meta.glob("./portfolioProjects/*.tsx", {
+    eager: true,
+  });
+
+  const records = Object.keys(recordFiles).map(
+    (path) => path.split("/").pop()?.replace(".tsx", "") ?? ""
+  );
 
   return (
     <nav className="relative overflow-hidden">

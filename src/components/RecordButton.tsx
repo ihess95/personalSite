@@ -1,4 +1,10 @@
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+
+const getTruncatedLabel = (text: string, maxLength: number = 15) => {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength - 3) + "...";
+};
 
 interface RecordButtonProps {
   isActive?: boolean;
@@ -6,6 +12,7 @@ interface RecordButtonProps {
   className?: string;
   label?: string;
   isAnimating?: boolean;
+  globalActiveRecord?: string | null;
 }
 
 function RecordButton({
@@ -14,16 +21,30 @@ function RecordButton({
   className = "",
   label,
   isAnimating = false,
+  globalActiveRecord,
 }: RecordButtonProps) {
-  // Separate the rotation animation from layout animations
-  const shouldRotate = isActive && !isAnimating; // Only rotate when playing, not during transition
+  const [localIsActive, setLocalIsActive] = useState(isActive);
+
+  useEffect(() => {
+    if (isActive) {
+      setLocalIsActive(true);
+    } else if (globalActiveRecord && globalActiveRecord !== label) {
+      const timer = setTimeout(() => {
+        setLocalIsActive(false);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (!globalActiveRecord) {
+      setLocalIsActive(false);
+    }
+  }, [isActive, globalActiveRecord, label]);
+
+  const shouldRotate = localIsActive && !isAnimating;
 
   return (
     <motion.button
       layoutId={label ? `record-${label}` : undefined}
       onClick={onClick}
       className={`relative w-16 h-16 rounded-full bg-gradient-to-br from-gray-900 via-black to-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300 ${className}`}
-      // Clean separation of animations
       animate={shouldRotate ? { rotate: 360 } : undefined}
       transition={{
         rotate: {
@@ -33,12 +54,11 @@ function RecordButton({
         },
         layout: {
           duration: 0.8,
-          ease: [0.4, 0, 0.2, 1], // Use cubic-bezier instead of spring for more predictable timing
+          ease: [0.4, 0, 0.2, 1],
         },
       }}
-      // Use CSS transforms for hover effects to avoid conflicts
-      whileHover={!isActive ? { scale: 1.05 } : undefined}
-      whileTap={!isActive ? { scale: 0.95 } : undefined}
+      whileHover={!localIsActive ? { scale: 1.05 } : undefined}
+      whileTap={!localIsActive ? { scale: 0.95 } : undefined}
     >
       {/* Noise texture overlay */}
       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-transparent via-gray-700/20 to-transparent opacity-60"></div>
@@ -62,19 +82,20 @@ function RecordButton({
         <div className="absolute inset-4 rounded-full flex items-center justify-center pointer-events-none">
           <svg className="w-full h-full" viewBox="0 0 100 100">
             <defs>
+              {/* Full circle path for better text distribution */}
               <path
                 id={`curve-${label}`}
-                d="M 20 50 A 30 30 0 0 1 80 50"
+                d="M 50 20 A 30 30 0 1 1 49.9 20"
                 fill="none"
               />
             </defs>
-            <text className="fill-gray-800 text-[8px] font-bold">
+            <text className="fill-gray-800 text-[7px] font-bold">
               <textPath
                 href={`#curve-${label}`}
-                startOffset="50%"
+                startOffset="25%"
                 textAnchor="middle"
               >
-                {label.toUpperCase()}
+                {getTruncatedLabel(label.toUpperCase())}
               </textPath>
             </text>
           </svg>
@@ -83,5 +104,4 @@ function RecordButton({
     </motion.button>
   );
 }
-
 export default RecordButton;
