@@ -1,9 +1,14 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { paletteFor } from "../recordArt";
 
-const getTruncatedLabel = (text: string, maxLength: number = 15) => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength - 3) + "...";
+const getInitials = (text: string) => {
+  return text
+    .split(" ")
+    .map((word) => word.charAt(0))
+    .join("")
+    .toUpperCase()
+    .substring(0, 3); // Max 3 initials to keep it readable
 };
 
 interface RecordButtonProps {
@@ -40,68 +45,65 @@ function RecordButton({
 
   const shouldRotate = localIsActive && !isAnimating;
 
+  // The label wears the colour of the project's sleeve.
+  const palette = label ? paletteFor(label) : null;
+
   return (
     <motion.button
       layoutId={label ? `record-${label}` : undefined}
       onClick={onClick}
-      className={`relative w-16 h-16 rounded-full bg-gradient-to-br from-gray-900 via-black to-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300 ${className}`}
-      animate={shouldRotate ? { rotate: 360 } : undefined}
+      className={`relative w-32 h-32 rounded-full bg-gradient-to-br from-gray-900 via-black to-gray-800 shadow-2xl border-2 border-gray-700 transition-all duration-300 hover:shadow-3xl focus:outline-none focus:ring-4 focus:ring-blue-500/30 ${className}`}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      animate={{
+        rotate: shouldRotate ? 360 : 0,
+      }}
       transition={{
         rotate: {
-          duration: 2,
-          repeat: shouldRotate ? Infinity : 0,
+          duration: 3,
           ease: "linear",
+          repeat: shouldRotate ? Infinity : 0,
         },
         layout: {
           duration: 0.8,
-          ease: [0.4, 0, 0.2, 1],
+          ease: "easeInOut",
         },
       }}
-      whileHover={!localIsActive ? { scale: 1.05 } : undefined}
-      whileTap={!localIsActive ? { scale: 0.95 } : undefined}
     >
       {/* Noise texture overlay */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-transparent via-gray-700/20 to-transparent opacity-60"></div>
+      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-transparent via-white/5 to-transparent pointer-events-none"></div>
 
       {/* Sheen */}
-      <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/10 to-transparent"></div>
+      <div className="absolute top-4 left-4 w-8 h-8 bg-gradient-to-br from-white/20 to-transparent rounded-full blur-sm pointer-events-none"></div>
 
       {/* Record grooves */}
-      <div className="absolute inset-1 rounded-full border border-gray-600/40"></div>
-      <div className="absolute inset-2 rounded-full border border-gray-600/30"></div>
-      <div className="absolute inset-3 rounded-full border border-gray-600/20"></div>
+      <div className="absolute inset-2 rounded-full border border-gray-600/60"></div>
+      <div className="absolute inset-4 rounded-full border border-gray-600/40"></div>
+      <div className="absolute inset-6 rounded-full border border-gray-600/30"></div>
+      <div className="absolute inset-8 rounded-full border border-gray-600/20"></div>
 
-      {/* White record label area */}
-      <div className="absolute inset-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-300 shadow-inner"></div>
+      {/* Colored record label area - now uses matching colors */}
+      <div
+        className="absolute inset-8 flex items-center justify-center rounded-full shadow-inner"
+        style={{ background: palette?.ink ?? "#E5E7EB" }}
+      >
+        {/* Small black spindle hole */}
+        <div className="absolute w-2 h-2 bg-black rounded-full z-20"></div>
 
-      {/* Small black spindle hole */}
-      <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
-
-      {/* Curved Label Text */}
-      {label && (
-        <div className="absolute inset-4 rounded-full flex items-center justify-center pointer-events-none">
-          <svg className="w-full h-full" viewBox="0 0 100 100">
-            <defs>
-              {/* Full circle path for better text distribution */}
-              <path
-                id={`curve-${label}`}
-                d="M 50 20 A 30 30 0 1 1 49.9 20"
-                fill="none"
-              />
-            </defs>
-            <text className="fill-gray-800 text-[7px] font-bold">
-              <textPath
-                href={`#curve-${label}`}
-                startOffset="25%"
-                textAnchor="middle"
-              >
-                {getTruncatedLabel(label.toUpperCase())}
-              </textPath>
-            </text>
-          </svg>
-        </div>
-      )}
+        {/* Initials Label */}
+        {label && (
+          <div className="absolute inset-0 flex items-center justify-center z-10">
+            <span
+              className="text-sm font-bold tracking-wider"
+              style={{ color: palette?.on }}
+            >
+              {getInitials(label)}
+            </span>
+          </div>
+        )}
+      </div>
     </motion.button>
   );
 }
+
 export default RecordButton;

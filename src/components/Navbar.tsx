@@ -1,32 +1,28 @@
 import DustSleeve from "./DustSleeve";
 import { useState } from "react";
+import { PROJECT_LABELS } from "../projects";
 
 function NavBar({
   onRecordSelect,
   activeRecord,
+  flyingRecord,
 }: {
   onRecordSelect: (label: string) => void;
   activeRecord: string | null;
+  /** The record currently in the air between a sleeve and the platter. */
+  flyingRecord?: string | null;
 }) {
   const [hoveredRecord, setHoveredRecord] = useState<string | null>(null);
-  const recordFiles = import.meta.glob("./portfolioProjects/*.tsx", {
-    eager: true,
-  });
-
-  const records = Object.keys(recordFiles).map(
-    (path) => path.split("/").pop()?.replace(".tsx", "") ?? ""
-  );
-
   return (
     <nav className="relative overflow-hidden">
       {/* Shelf Content */}
       <div className="relative z-10">
-        {/* Shelf edge */}
-        <div className="h-2 bg-wood-light shadow-inner"></div>
+        {/* The lit top edge of the board */}
+        <div className="h-1.5 bg-wood-light"></div>
 
         {/* Main shelf surface */}
-        <div className="flex gap-6 items-end justify-center px-8 py-4 bg-wood-main">
-          {records.map((label) => (
+        <div className="flex items-end justify-center gap-6 bg-wood-main px-8 pb-3 pt-5">
+          {PROJECT_LABELS.map((label) => (
             <DustSleeve
               key={label}
               label={label}
@@ -34,12 +30,13 @@ function NavBar({
               onHover={(hovered) => setHoveredRecord(hovered ? label : null)}
               onClick={() => onRecordSelect(label)}
               isActive={activeRecord === label}
+              inFlight={flyingRecord === label}
             />
           ))}
         </div>
 
-        {/* Shelf front edge */}
-        <div className="h-1 bg-wood-dark"></div>
+        {/* The lip underneath, in shadow */}
+        <div className="h-2 bg-wood-dark"></div>
       </div>
     </nav>
   );

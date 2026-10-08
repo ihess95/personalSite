@@ -1,16 +1,6 @@
 import { motion } from "framer-motion";
-// Utility function to convert camelCase/PascalCase to spaced words - I think I may want to refactor this into it's own file so it's usable globally
-const formatDisplayName = (label: string): string => {
-  return (
-    label
-      // Insert a space before any uppercase letter that follows a lowercase letter
-      .replace(/([a-z])([A-Z])/g, "$1 $2")
-      // Insert a space before any uppercase letter that follows a number
-      .replace(/([0-9])([A-Z])/g, "$1 $2")
-      // Capitalize the first letter
-      .replace(/^./, (str) => str.toUpperCase())
-  );
-};
+import Vinyl from "./Vinyl";
+import { formatDisplayName, paletteFor, GRAIN } from "../recordArt";
 
 function DustSleeve({
   label,
@@ -18,96 +8,136 @@ function DustSleeve({
   onHover,
   onClick,
   isActive,
+  inFlight = false,
 }: {
   label: string;
   isHovered: boolean;
   onHover: (hovered: boolean) => void;
   onClick: () => void;
   isActive: boolean;
+  /** True while App is flying a copy of this record to or from the platter. */
+  inFlight?: boolean;
 }) {
+  const palette = paletteFor(label);
+  const title = formatDisplayName(label);
+
   return (
     <div
-      className="relative cursor-pointer"
+      className="relative"
+      // Hover pulls the record past the gap between sleeves, so the stack
+      // has to lift or the next sleeve paints over it.
+      style={{ zIndex: isHovered ? 20 : isActive ? 10 : 1 }}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
-      onClick={onClick}
     >
-      {/* Dust Sleeve*/}
-      <motion.div
-        className="w-20 h-20 bg-gradient-to-br from-slate-300 to-slate-500 border border-slate-300 shadow-md relative overflow-hidden z-10"
-        whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.2 }}
+      <motion.button
+        type="button"
+        onClick={onClick}
+        aria-pressed={isActive}
+        aria-label={`${title}${isActive ? ", now playing" : ""}`}
+        className="relative z-10 block h-24 w-24 overflow-hidden text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-amber-900"
+        style={{
+          background: palette.ink,
+          border: `1px solid ${palette.rule}`,
+          // Pulled forward out of the shelf: the strongest selected cue,
+          // and the one that owes nothing to colour.
+          boxShadow: isActive
+            ? "0 14px 20px -8px rgba(0,0,0,0.7)"
+            : "0 2px 4px -1px rgba(0,0,0,0.3)",
+        }}
+        animate={{ y: isActive ? -12 : 0 }}
+        whileHover={{ y: isActive ? -16 : -4 }}
+        whileTap={{ y: isActive ? -14 : -2 }}
+        transition={{ type: "spring", stiffness: 420, damping: 30 }}
       >
-        {/* Sleeve texture */}
-        <div className="absolute inset-0 bg-gradient-to-br from-transparent via-slate-200/30 to-slate-300/20"></div>
+        {/* Paper grain. Overlay blends it into the colour rather than
+            laying a grey film over the top. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage: GRAIN,
+            mixBlendMode: "overlay",
+            opacity: 0.16,
+          }}
+        />
 
-        {/* Corner Wear */}
-        <div className="absolute top-0 right-0 w-3 h-3 bg-slate-300/40 transform rotate-45 translate-x-1 -translate-y-1"></div>
+        {/* Card stock: light catches the top edge, the bottom sits in shadow. */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(170deg, rgba(255,255,255,0.18), rgba(255,255,255,0) 38%, rgba(0,0,0,0.22))",
+          }}
+        />
 
-        {/* Label text on sleeve */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-2 text-center">
-          <span className="text-xs font-bold text-amber-800 leading-tight">
-            {formatDisplayName(label)}
-          </span>
-          <span className="text-[10px] text-amber-700 mt-1">PROJECT</span>
+        {/* The open edge the record slides out of. */}
+        <div
+          className="pointer-events-none absolute inset-y-0 right-0 w-[3px]"
+          style={{
+            background:
+              "linear-gradient(to left, rgba(0,0,0,0.45), rgba(0,0,0,0))",
+          }}
+        />
+
+        {/* Printed matter. Identical placement on every sleeve. */}
+        <div className="relative flex h-full flex-col justify-between p-2">
+          <div
+            className="flex items-start justify-between text-[7px] font-semibold tracking-[0.14em]"
+            style={{ color: palette.on, opacity: isActive ? 1 : 0.7 }}
+          >
+            <span>{palette.cat}</span>
+            <span aria-hidden="true">{isActive ? "PLAYING" : "33⅓"}</span>
+          </div>
+
+          <h2
+            // Explicit font-sans: the base layer sets every h2 in the
+            // display serif, which is the wrong face at 10px.
+            className="text-center font-sans text-[10px] font-bold leading-[1.15]"
+            style={{ color: palette.on, textWrap: "balance" }}
+          >
+            {title}
+          </h2>
+
+          <div
+            className="h-px w-full"
+            style={{ background: palette.rule }}
+            aria-hidden="true"
+          />
         </div>
 
-        {/* Sleeve opening indication */}
-        <div className="absolute right-0 top-0 bottom-0 w-0.5 bg-slate-400/60" />
-      </motion.div>
+        {/* Selected, by four cues and none of them hue: lifted and
+            shadowed above, the record gone from behind it, an empty
+            interior, and a band in its own ink. */}
+        {isActive && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ boxShadow: "inset 0 0 20px 5px rgba(0,0,0,0.5)" }}
+            />
+            <div
+              className="pointer-events-none absolute inset-[3px]"
+              style={{ border: `1.5px solid ${palette.on}` }}
+            />
+          </>
+        )}
+      </motion.button>
 
-      {/* Record that animates to player - only show when NOT active */}
+      {/* The record in the sleeve. It does not travel to the turntable
+          itself; App measures it and flies a fixed copy instead. */}
       {!isActive && (
         <motion.div
-          layoutId={`record-${label}`} // This matches the layoutId in RecordPlayer
-          className="absolute top-1 right-0 z-0"
-          initial={{ x: -12 }}
-          animate={{
-            x: isHovered ? 8 : -12,
-          }}
-          transition={{
-            x: { duration: 0.3, ease: "easeOut" },
-            layout: {
-              duration: 0.8,
-              ease: "easeInOut",
-            },
-          }}
+          data-vinyl={`shelf-${label}`}
+          className="pointer-events-none absolute right-0 top-2 z-0 h-20 w-20"
+          // A sliver shows past the open edge at rest, so the sleeve reads
+          // as holding something. Hover pulls it out.
+          initial={{ x: 3 }}
+          animate={{ x: isHovered ? 30 : 3, opacity: inFlight ? 0 : 1 }}
+          transition={{ x: { type: "spring", stiffness: 380, damping: 32 } }}
         >
-          {/* Simplified record for shelf */}
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-gray-900 via-black to-gray-800 shadow-lg relative">
-            {/* Record grooves */}
-            <div className="absolute inset-1 rounded-full border border-gray-600/40"></div>
-            <div className="absolute inset-2 rounded-full border border-gray-600/30"></div>
-            <div className="absolute inset-3 rounded-full border border-gray-600/20"></div>
-            <div className="absolute inset-4 rounded-full border border-gray-600/15"></div>
-
-            {/* Record label */}
-            <div className="absolute inset-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-300 shadow-inner flex items-center justify-center">
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                <defs>
-                  <path
-                    id={`shelf-curve-${label}`}
-                    d="M 25 50 A 25 25 0 0 1 75 50"
-                    fill="none"
-                  />
-                </defs>
-                <text className="fill-gray-800 text-[8px] font-bold">
-                  <textPath
-                    href={`#shelf-curve-${label}`}
-                    startOffset="50%"
-                    textAnchor="middle"
-                  >
-                    {label.toUpperCase()}
-                  </textPath>
-                </text>
-              </svg>
-            </div>
-
-            {/* Center hole */}
-            <div className="absolute top-1/2 left-1/2 w-2 h-2 bg-black rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
-          </div>
+          <Vinyl label={label} id={`shelf-${label}`} />
         </motion.div>
       )}
+
     </div>
   );
 }

@@ -1,200 +1,153 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import ProjectDisplayHandler from "./ProjectDisplayHandler";
+import { formatDisplayName, paletteFor } from "../recordArt";
+import { MODE_ORDER, sectionsFor, type ProjectMode } from "../projects";
 
-type ProjectMode = "abstract" | "reflection" | "full" | "sources";
-
+// The panel is paper rather than another dark surface: liner notes are
+// printed, and the reading copy here runs long.
 function ContentArea({ activeRecord }: { activeRecord: string | null }) {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentMode, setCurrentMode] = useState<ProjectMode>("abstract");
 
-  // Reset to abstract when activeRecord changes - I don't think this is working
-  const handleRecordChange = (newRecord: string | null) => {
-    if (newRecord !== activeRecord) {
-      setCurrentMode("abstract");
-    }
-  };
-
-  // Call this effect when activeRecord changes
+  // Reset to abstract when activeRecord changes
   useEffect(() => {
-    handleRecordChange(activeRecord);
+    setCurrentMode("abstract");
   }, [activeRecord]);
+
+  const palette = activeRecord ? paletteFor(activeRecord) : null;
+  // Each project names its own sections; the coursework keeps the defaults.
+  const labels = activeRecord ? sectionsFor(activeRecord) : null;
+  const title = activeRecord ? formatDisplayName(activeRecord) : null;
 
   if (isFullScreen && activeRecord) {
     return (
       <motion.div
-        className="fixed inset-0 bg-white z-50 overflow-y-auto"
+        className="fixed inset-0 z-50 overflow-y-auto bg-paper"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        {/* Reading Header */}
-        <div className="sticky top-0 bg-white border-b shadow-sm p-4 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-800">
-            {activeRecord} - Full Paper
-          </h1>
+        <div className="sticky top-0 flex items-center justify-between border-b border-paper-shade bg-paper/95 px-6 py-4 backdrop-blur">
+          <h1 className="text-xl font-semibold text-paper-ink">{title}</h1>
           <button
             onClick={() => setIsFullScreen(false)}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+            className="rounded-sm px-3 py-1.5 font-sans text-sm font-medium text-paper-muted transition-colors hover:bg-paper-shade hover:text-paper-ink"
           >
-            ← Back to Portfolio
+            &larr; Back to the shelf
           </button>
         </div>
 
-        {/* Full Paper Content with Scrolling */}
-        <div className="max-w-4xl mx-auto p-8">
-          <div className="prose prose-lg max-w-none text-black max-h-[calc(100vh-120px)] overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-            <ProjectDisplayHandler
-              projectLabel={activeRecord.toLowerCase()}
-              mode="full"
-            />
-          </div>
+        <div className="mx-auto max-w-3xl px-6 py-10 font-book text-lg leading-relaxed text-paper-ink">
+          <ProjectDisplayHandler
+            projectLabel={activeRecord.toLowerCase()}
+            mode="full"
+          />
         </div>
       </motion.div>
     );
   }
 
-  const getModeConfig = (mode: ProjectMode) => {
-    const configs = {
-      abstract: {
-        icon: "📄",
-        label: "Abstract",
-        bgColor: "from-gray-50 to-gray-100",
-      },
-      reflection: {
-        icon: "💭",
-        label: "Reflection",
-        bgColor: "from-blue-50 to-indigo-50",
-      },
-      full: {
-        icon: "📖",
-        label: "Full Text",
-        bgColor: "from-green-50 to-emerald-50",
-      },
-      sources: {
-        icon: "📚",
-        label: "Sources",
-        bgColor: "from-purple-50 to-violet-50",
-      },
-    };
-    return configs[mode];
-  };
-
-  const currentConfig = getModeConfig(currentMode);
-
   return (
-    <motion.div className="text-center" layout>
-      <motion.div
-        className="bg-white/50 backdrop-blur-sm rounded-lg shadow-lg max-w-4xl mx-auto"
-        animate={{
-          scale: activeRecord ? 1.02 : 1,
-          boxShadow: activeRecord
-            ? "0 25px 50px -12px rgba(0, 0, 0, 0.25)"
-            : "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-        }}
-        transition={{ duration: 0.3 }}
-      >
-        <motion.h2
-          className="text-2xl font-semibold text-gray-800 p-6 border-b"
-          key={activeRecord || "default"}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          {activeRecord
-            ? `${activeRecord} Academic Work`
-            : "Select a category above"}
-        </motion.h2>
+    <div className="w-full">
+      {/* No framer `layout`: it animates a height change by scaling the
+          box, which squashes the text inside while it runs. */}
+      <div className="overflow-hidden rounded-sm bg-paper shadow-[0_28px_60px_-24px_rgba(0,0,0,0.85)]">
+        {!activeRecord ? (
+          <div className="px-8 py-20 text-center">
+            <h2 className="text-2xl font-semibold text-paper-ink">
+              Nothing on the turntable
+            </h2>
+            <p className="mx-auto mt-3 max-w-sm font-book text-lg text-paper-muted">
+              Pick a record off the shelf above to read about the project.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Sleeve colour and catalogue number carry over, so the panel
+                is visibly the same release as the record playing. */}
+            <header
+              className="border-b border-paper-shade px-8 pb-6 pt-7"
+              style={{ borderTop: `3px solid ${palette?.ink}` }}
+            >
+              <motion.div
+                key={activeRecord}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+              >
+                <p className="font-sans text-[11px] font-semibold uppercase tracking-[0.22em] text-paper-muted">
+                  {palette?.cat}
+                </p>
+                <h2 className="mt-2 text-3xl font-semibold text-paper-ink">
+                  {title}
+                </h2>
+              </motion.div>
 
-        <motion.div
-          key={`content-${activeRecord || "default"}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          {activeRecord ? (
-            <div className="p-6">
-              {/* Navigation Tabs */}
-              <div className="flex flex-wrap gap-2 mb-6 justify-center">
-                {(
-                  ["abstract", "reflection", "full", "sources"] as ProjectMode[]
-                ).map((mode) => {
-                  const config = getModeConfig(mode);
+              <nav className="-mb-6 mt-6 flex flex-wrap gap-6">
+                {MODE_ORDER.map((mode) => {
+                  const active = currentMode === mode;
                   return (
                     <button
                       key={mode}
                       onClick={() => setCurrentMode(mode)}
-                      className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-2 ${
-                        currentMode === mode
-                          ? "bg-blue-600 text-white shadow-md"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      aria-current={active ? "page" : undefined}
+                      className={`relative pb-3 font-sans text-sm font-medium transition-colors ${
+                        active
+                          ? "text-paper-ink"
+                          : "text-paper-muted hover:text-paper-ink"
                       }`}
                     >
-                      <span>{config.icon}</span>
-                      {config.label}
+                      {labels?.[mode]}
+                      {active && (
+                        <motion.span
+                          layoutId="mode-underline"
+                          className="absolute inset-x-0 -bottom-px h-0.5"
+                          style={{ background: palette?.ink }}
+                        />
+                      )}
                     </button>
                   );
                 })}
-              </div>
+              </nav>
+            </header>
 
-              {/* Content Section with Scrolling */}
+            {/* Content flows and the page scrolls. A fixed-height inner
+                scroller would clip the Book Music demo. */}
+            {/* A keyed fade-in rather than AnimatePresence mode="wait",
+                which holds the incoming panel until the outgoing one has
+                finished exiting and can strand the reader on an empty one. */}
+            <div className="px-8 py-8">
               <motion.div
-                key={currentMode}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className={`p-6 bg-gradient-to-r ${
-                  currentConfig.bgColor
-                } rounded-lg border-l-4 ${
-                  currentMode === "abstract"
-                    ? "border-gray-400"
-                    : currentMode === "reflection"
-                    ? "border-blue-400"
-                    : currentMode === "full"
-                    ? "border-green-400"
-                    : "border-purple-400"
-                }`}
+                key={`${activeRecord}-${currentMode}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
               >
-                <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
-                  <span className="mr-2">{currentConfig.icon}</span>
-                  {currentConfig.label}
-                </h3>
-                <div className="prose prose-sm max-w-none text-left text-gray-700 max-h-96 overflow-y-auto pr-4 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
+                <div
+                  className={`font-book text-[20px] leading-relaxed text-paper-ink ${
+                    currentMode === "full" ? "" : "measure"
+                  }`}
+                >
                   <ProjectDisplayHandler
                     projectLabel={activeRecord.toLowerCase()}
                     mode={currentMode}
                   />
                 </div>
+
+                {currentMode !== "full" && (
+                  <button
+                    onClick={() => setIsFullScreen(true)}
+                    className="mt-8 rounded-sm border border-paper-shade px-4 py-2 font-sans text-sm font-medium text-paper-ink transition-colors hover:bg-paper-shade"
+                  >
+                    Read full screen
+                  </button>
+                )}
               </motion.div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-4 justify-center mt-6">
-                <button
-                  onClick={() => setIsFullScreen(true)}
-                  className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
-                >
-                  <span>🔍</span>
-                  View Full Screen
-                </button>
-
-                <button
-                  onClick={() => {
-                    /* Handle download or external link */
-                  }}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center gap-2"
-                >
-                  <span>⬇️</span>
-                  Download PDF
-                </button>
-              </div>
             </div>
-          ) : (
-            <div className="p-8 text-gray-600">
-              Choose a category to view academic papers and reflections.
-            </div>
-          )}
-        </motion.div>
-      </motion.div>
-    </motion.div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 
